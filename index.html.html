@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="author" content="Matheus Mendonça">
+<meta name="description" content="Monetz — Simulador de antecipação de recebíveis com parcela diária fixa em dias úteis.">
+<title>Monetz · Simulador de Antecipação</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B1B3A'/%3E%3Ctext x='32' y='45' font-family='Segoe UI,Arial,sans-serif' font-size='36' font-weight='800' fill='%23D4AF37' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<style>
+  /* =====================================================================
+     Design System Monetz — Azul Marinho · Dourado · Branco
+     ===================================================================== */
+  :root {
+    --navy-900: #081226;
+    --navy-800: #0B1B3A;
+    --navy-700: #12264D;
+    --navy-600: #1B3566;
+    --navy-100: #E8EDF7;
+    --gold-500: #D4AF37;
+    --gold-400: #E3C25B;
+    --gold-600: #B8942A;
+    --white: #FFFFFF;
+    --ink: #14213D;
+    --ink-soft: #5A6B8C;
+    --line: #E4E9F2;
+    --ok: #1E8E5A;
+    --warn-bg: #FFF7E0;
+    --warn-border: #E7C879;
+    --warn-ink: #7A5C0E;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --shadow-card: 0 10px 30px rgba(8, 18, 38, .18), 0 2px 8px rgba(8, 18, 38, .10);
+    --shadow-soft: 0 4px 14px rgba(8, 18, 38, .08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    background:
+      radial-gradient(1100px 500px at 85% -10%, rgba(212, 175, 55, .14), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(27, 53, 102, .55), transparent 55%),
+      linear-gradient(160deg, var(--navy-900) 0%, var(--navy-800) 55%, var(--navy-700) 100%);
+    min-height: 100vh;
+    color: var(--ink);
+    padding: 32px 20px 48px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  /* ---------- Cabeçalho ---------- */
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+  .logo {
+    width: 46px; height: 46px; border-radius: 13px; flex: 0 0 auto;
+    background: linear-gradient(135deg, var(--gold-400), var(--gold-600));
+    display: grid; place-items: center;
+    font-weight: 800; font-size: 24px; color: var(--navy-900);
+    box-shadow: 0 6px 18px rgba(212, 175, 55, .35);
+  }
+  .brand { color: var(--white); font-size: 26px; font-weight: 700; letter-spacing: .3px; }
+  .brand small { display: block; font-size: 13px; font-weight: 400; color: #B9C4DC; letter-spacing: .6px; }
+
+  /* ---------- Layout dos dois blocos ---------- */
+  .grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 22px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    padding: 26px 26px 28px;
+  }
+  .card h2 {
+    font-size: 13px; letter-spacing: 1.6px; color: var(--ink-soft);
+    text-transform: uppercase; display: flex; align-items: center; gap: 10px;
+    margin-bottom: 20px;
+  }
+  .card h2::before {
+    content: ""; width: 22px; height: 3px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--gold-400), var(--gold-600));
+  }
+
+  /* ---------- Formulário ---------- */
+  .field { margin-bottom: 15px; }
+  .field label { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%; padding: 12px 14px; font-size: 15.5px; color: var(--ink);
+    border: 1.5px solid var(--line); border-radius: var(--radius-md);
+    background: #FAFBFE; outline: none; font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--gold-500); box-shadow: 0 0 0 3px rgba(212, 175, 55, .18);
+    background: var(--white);
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 460px) { .row2 { grid-template-columns: 1fr; } }
+
+  .btn {
+    width: 100%; margin-top: 8px; padding: 15px; border: none; cursor: pointer;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--gold-400), var(--gold-600));
+    color: var(--navy-900); font-size: 15px; font-weight: 800; letter-spacing: 2px;
+    box-shadow: 0 8px 22px rgba(212, 175, 55, .38);
+    transition: transform .12s, box-shadow .12s, filter .12s;
+  }
+  .btn:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 10px 26px rgba(212, 175, 55, .45); }
+  .btn:active { transform: translateY(0); }
+  .erro-form {
+    display: none; margin-top: 12px; padding: 11px 14px; border-radius: var(--radius-md);
+    background: #FDECEC; color: #8C1D1D; border: 1px solid #F0B9B9; font-size: 13.5px;
+  }
+
+  /* ---------- Resultado ---------- */
+  .placeholder { color: var(--ink-soft); font-size: 14.5px; padding: 26px 6px; text-align: center; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi {
+    border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 13px 15px; background: linear-gradient(180deg, #FFFFFF, #F7F9FD);
+    box-shadow: var(--shadow-soft);
+  }
+  .kpi .k-label { font-size: 11.5px; letter-spacing: .8px; text-transform: uppercase; color: var(--ink-soft); }
+  .kpi .k-value { font-size: 19px; font-weight: 800; color: var(--navy-800); margin-top: 3px; white-space: nowrap; }
+  .kpi .k-sub { font-size: 11.5px; font-weight: 600; color: var(--ink-soft); margin-top: 2px; }
+  .kpi.gold { border-color: rgba(212, 175, 55, .55); background: linear-gradient(180deg, #FFFDF4, #FBF3D9); }
+  .kpi.gold .k-value { color: var(--gold-600); }
+
+  /* ---------- Gráfico da evolução do saldo ---------- */
+  .grafico {
+    margin-top: 18px; padding: 14px 14px 6px;
+    border: 1px solid var(--line); border-radius: var(--radius-md);
+    background: linear-gradient(180deg, #FFFFFF, #F9FBFE); box-shadow: var(--shadow-soft);
+  }
+  .grafico .g-titulo { font-size: 11.5px; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: 6px; }
+  .grafico svg { width: 100%; height: auto; display: block; }
+
+  .linhas { border-top: 1px solid var(--line); }
+  .linha { display: flex; justify-content: space-between; gap: 16px; padding: 10px 2px; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+  .linha .l { color: var(--ink-soft); }
+  .linha .v { font-weight: 700; color: var(--navy-800); text-align: right; }
+
+  .aviso {
+    margin: 16px 0 6px; padding: 14px 16px; border-radius: var(--radius-md);
+    background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-ink);
+    font-size: 13.5px; line-height: 1.5;
+  }
+  .aviso b { display: block; margin-bottom: 4px; }
+  .aviso.erro { background: #FDECEC; border-color: #F0B9B9; color: #8C1D1D; }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .8px;
+    padding: 3px 10px; border-radius: 999px; margin-left: 8px; vertical-align: 2px;
+  }
+  .badge.ok { background: #E4F5EC; color: var(--ok); }
+  .badge.min { background: #FBF3D9; color: var(--gold-600); }
+
+  /* ---------- Evolução do saldo ---------- */
+  details.evolucao { margin-top: 18px; }
+  details.evolucao summary {
+    cursor: pointer; font-size: 13px; font-weight: 700; color: var(--navy-600);
+    letter-spacing: .4px; user-select: none; padding: 8px 2px;
+  }
+  .tabela-scroll { max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-md); margin-top: 10px; }
+  table.evo { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.evo th {
+    position: sticky; top: 0; background: var(--navy-800); color: var(--white);
+    padding: 9px 12px; text-align: right; font-weight: 600; white-space: nowrap;
+  }
+  table.evo th:first-child, table.evo td:first-child { text-align: left; }
+  table.evo td { padding: 7px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  table.evo tr:nth-child(even) td { background: #F7F9FD; }
+  table.evo tr:last-child td { font-weight: 700; color: var(--gold-600); }
+
+  footer { margin-top: 28px; text-align: center; color: #8FA0C2; font-size: 12px; letter-spacing: .4px; }
+
+  /* ---------- Ações pós-simulação (PDF / E-mail / WhatsApp) ---------- */
+  .acoes { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .btn-acao {
+    flex: 1; min-width: 138px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 12px; border-radius: var(--radius-md); cursor: pointer;
+    border: 1.5px solid var(--navy-600); background: var(--white); color: var(--navy-600);
+    font-family: inherit; font-size: 13px; font-weight: 700; letter-spacing: .3px;
+    transition: background .15s, color .15s, transform .12s, box-shadow .15s;
+  }
+  .btn-acao svg { width: 16px; height: 16px; flex: 0 0 auto; fill: currentColor; }
+  .btn-acao:hover { background: var(--navy-800); border-color: var(--navy-800); color: var(--white);
+    transform: translateY(-1px); box-shadow: var(--shadow-soft); }
+  .btn-acao.whats { border-color: #1DA851; color: #1DA851; }
+  .btn-acao.whats:hover { background: #1DA851; border-color: #1DA851; color: var(--white); }
+
+  /* ---------- Relatório de impressão (Gerar PDF) ---------- */
+  #printArea { display: none; }
+  @media print {
+    body { background: var(--white) !important; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .wrap { display: none !important; }
+    #printArea { display: block; color: var(--ink); font-size: 12px; }
+    .p-cab {
+      background: var(--navy-800); color: var(--white); border-radius: 10px;
+      padding: 16px 20px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .p-cab .p-marca { font-size: 20px; font-weight: 800; color: var(--gold-500); }
+    .p-cab .p-titulo { font-size: 12px; text-align: right; line-height: 1.5; }
+    .p-secao { margin: 18px 0 8px; font-size: 11px; font-weight: 800; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--navy-600);
+      border-bottom: 2px solid var(--gold-500); padding-bottom: 4px; }
+    table.p-dados { width: 100%; border-collapse: collapse; }
+    table.p-dados td { padding: 6px 8px; border-bottom: 1px solid var(--line); }
+    table.p-dados td:first-child { color: var(--ink-soft); width: 55%; }
+    table.p-dados td:last-child { font-weight: 700; text-align: right; }
+    .p-aviso { margin-top: 12px; padding: 10px 14px; border: 1px solid var(--warn-border);
+      background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; }
+    table.p-evo { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 10.5px; }
+    table.p-evo thead { display: table-header-group; }
+    table.p-evo th { background: var(--navy-800); color: var(--white); padding: 5px 8px; text-align: right; }
+    table.p-evo th:first-child, table.p-evo td:first-child { text-align: left; }
+    table.p-evo td { padding: 3.5px 8px; text-align: right; border-bottom: 1px solid var(--line); }
+    .p-rodape { margin-top: 16px; font-size: 10px; color: var(--ink-soft); text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">M</div>
+    <div class="brand">Monetz<small>Antecipação de recebíveis · parcelas diárias em dias úteis</small></div>
+  </header>
+
+  <div class="grid">
+
+    <!-- =============== BLOCO 1: DADOS DA OPERAÇÃO =============== -->
+    <section class="card" aria-labelledby="t-dados">
+      <h2 id="t-dados">Dados da Operação</h2>
+
+      <div class="field">
+        <label for="inpValor">Valor do Crédito (R$)</label>
+        <input id="inpValor" type="text" inputmode="decimal" value="20.000,00" autocomplete="off">
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label for="inpTaxa">Taxa de Juros (% ao mês)</label>
+          <input id="inpTaxa" type="text" inputmode="decimal" value="4,00" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="inpServico">Taxa de Serviço (R$)</label>
+          <input id="inpServico" type="text" inputmode="decimal" value="800,00" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label for="inpPrazo">Prazo</label>
+          <select id="inpPrazo">
+            <option value="3">3 meses</option>
+            <option value="6" selected>6 meses</option>
+            <option value="9">9 meses</option>
+            <option value="12">12 meses</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="inpData">Data da Contratação</label>
+          <input id="inpData" type="date">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="inpParcela">Parcela Diária Fixa (R$)</label>
+        <input id="inpParcela" type="text" inputmode="decimal" value="250,00" autocomplete="off">
+      </div>
+
+      <button class="btn" id="btnSimular" type="button">SIMULAR</button>
+      <div class="erro-form" id="erroForm" role="alert"></div>
+    </section>
+
+    <!-- =============== BLOCO 2: RESULTADO DA SIMULAÇÃO =============== -->
+    <section class="card" aria-labelledby="t-resultado">
+      <h2 id="t-resultado">Resultado da Simulação</h2>
+      <div id="resultado">
+        <p class="placeholder">Preencha os dados da operação e clique em <b>SIMULAR</b>.</p>
+      </div>
+
+      <!-- Ações pós-simulação: aparecem após a primeira simulação -->
+      <div class="acoes" id="acoes" hidden>
+        <button class="btn-acao" id="btnPdf" type="button" title="Gerar relatório em PDF (Salvar como PDF)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12h8v1.6H8V12zm0 3.4h8V17H8v-1.6z"/></svg>
+          Gerar PDF
+        </button>
+        <button class="btn-acao" id="btnEmail" type="button" title="Enviar resumo por e-mail">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zm9 7.2L4.4 6.8h15.2L12 12.2zM4 8.3V17h16V8.3l-8 5.4-8-5.4z"/></svg>
+          E-mail
+        </button>
+        <button class="btn-acao whats" id="btnWhats" type="button" title="Enviar resumo pelo WhatsApp">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.7.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-2-1.2 7.4 7.4 0 0 1-1.4-1.7c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.8 2.8 4.4 3.9.6.3 1.1.4 1.5.6.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2-.1-.2-.2-.2-.4-.3z"/></svg>
+          WhatsApp
+        </button>
+        <button class="btn-acao" id="btnCopiar" type="button" title="Copiar link desta simulação (abre já preenchida)">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.6 13.4a1 1 0 0 0 1.4 1.4l4.3-4.3a3 3 0 0 0 0-4.2l-1.6-1.6a3 3 0 0 0-4.2 0L6.2 9a1 1 0 1 0 1.4 1.4l4.3-4.3a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-4.3 4.3zm2.8-2.8a1 1 0 0 0-1.4-1.4l-4.3 4.3a1 1 0 0 1-1.4 0l-1.6-1.6a1 1 0 0 1 0-1.4L9 6.2A1 1 0 1 0 7.6 4.8L3.3 9.1a3 3 0 0 0 0 4.2l1.6 1.6a3 3 0 0 0 4.2 0l4.3-4.3z"/></svg>
+          Copiar link
+        </button>
+        <button class="btn-acao" id="btnShare" type="button" hidden title="Compartilhar pela folha nativa do sistema">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a3 3 0 1 0-2.9-3.8L8.6 7.5a3 3 0 1 0 0 5l6.5 3.3a3 3 0 1 0 .7-1.5l-6.5-3.3a3 3 0 0 0 0-1l6.5-3.3A3 3 0 0 0 18 8z"/></svg>
+          Compartilhar
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>Monetz · Simulação de caráter informativo, sem valor contratual.</footer>
+</div>
+
+<!-- Relatório usado por "Gerar PDF": preenchido na hora, visível só na impressão -->
+<div id="printArea" aria-hidden="true"></div>
+
+<script>
+/**
+ * Motor Financeiro Monetz — Antecipação de Recebíveis com Parcela Diária Fixa
+ * ===========================================================================
+ *
+ * Motor de cálculo puro (zero dependências, zero DOM). Espelha 1:1 a
+ * implementação de referência em python/motor_monetz.py e os módulos VBA.
+ * Funciona em navegador (script tag), Node.js (require) e é diretamente
+ * portável para qualquer runtime JS (React Native, app híbrido etc.).
+ *
+ * Convenções (idênticas em Python/JS/VBA):
+ *  - Dinheiro interno em CENTAVOS (inteiros) — sem erro de ponto flutuante.
+ *  - Juros diários arredondados a centavos (half-up) a cada dia útil.
+ *  - taxa_diaria = (1 + taxa_mensal)^(12/252) - 1  (convenção BR de 252 d.u.).
+ *  - Primeira parcela no 1º dia útil ESTRITAMENTE após a contratação (D+1 útil).
+ *  - Data final = contratação + prazo em meses (semântica EDATE, com clamp
+ *    para o último dia do mês: 31/08 + 6m = 28/02).
+ *  - Dias úteis disponíveis = dias úteis no intervalo (contratação, final].
+ *  - Última parcela ajustada automaticamente para zerar o saldo devedor.
+ *
+ * Datas: internamente `Date` em UTC (new Date(Date.UTC(...))); na borda,
+ * strings ISO "YYYY-MM-DD" são aceitas e retornadas — imune a fuso horário.
+ *
+ * Pontos de extensão (sem reescrever o motor):
+ *  - `feriados`: array de "YYYY-MM-DD" (nacional/estadual/municipal).
+ *  - `politicaJuros`: function(saldoCent, taxaDiaria) -> jurosCent.
+ */
+"use strict";
+
+var Monetz = (function () {
+
+  // =========================================================================
+  // Constantes de negócio
+  // =========================================================================
+
+  var PRAZOS_VALIDOS = [3, 6, 9, 12];
+  var DIAS_UTEIS_ANO = 252;
+  var MESES_ANO = 12;
+  var MAX_ITERACOES = 100000;
+  var MSG_PARCELA_INSUFICIENTE =
+    "Parcela diária insuficiente para liquidar a operação dentro do prazo contratado.";
+  var MSG_PRAZO_ESTENDIDO =
+    "Parcela diária fixa mantida: a quantidade de parcelas necessárias excede os dias " +
+    "úteis do prazo contratado e o cronograma foi estendido automaticamente.";
+  var MSG_OPERACAO_INVIAVEL =
+    "Parcela diária não cobre os juros do primeiro dia — a operação não amortiza " +
+    "com esta parcela fixa.";
+
+  // Políticas de ajuste quando a parcela não liquida dentro do prazo:
+  //   "estender_prazo" (padrão) — regra comercial Monetz: a parcela é SEMPRE
+  //       fixa; o sistema aumenta automaticamente o número de parcelas.
+  //   "parcela_minima" (alternativa) — mantém o prazo e recalcula a parcela.
+  var POLITICAS_AJUSTE = ["estender_prazo", "parcela_minima"];
+
+  // =========================================================================
+  // Módulo: Funções Matemáticas
+  // =========================================================================
+
+  var Matematica = {
+    /** Arredondamento comercial para inteiro (0,5 sempre sobe). Valores >= 0. */
+    arredondarHalfUp: function (valor) {
+      return Math.floor(valor + 0.5);
+    },
+
+    paraCentavos: function (reais) {
+      return Matematica.arredondarHalfUp(reais * 100);
+    },
+
+    paraReais: function (centavos) {
+      return centavos / 100;
+    },
+
+    /** taxa_diaria = (1 + taxa_mensal)^(12/252) - 1 */
+    taxaMensalParaDiaria: function (taxaMensal) {
+      return Math.pow(1 + taxaMensal, MESES_ANO / DIAS_UTEIS_ANO) - 1;
+    },
+
+    /** Política de juros padrão: juros do dia sobre o saldo, em centavos. */
+    calcularJurosDia: function (saldoCent, taxaDiaria) {
+      return Matematica.arredondarHalfUp(saldoCent * taxaDiaria);
+    },
+
+    /**
+     * CET — Custo Efetivo Total como TIR diária (base dias úteis) do fluxo
+     * real: o cliente recebe o valor LÍQUIDO em t0 (já sem a taxa de serviço)
+     * e paga uma parcela por dia útil k = 1..n. Bisseção com 200 iterações;
+     * a sequência de operações é idêntica em Python/JS/VBA (mesmo resultado).
+     */
+    calcularCETDiario: function (pagamentosCent, liquidoCent) {
+      function valorPresente(taxa) {
+        var acumulado = 0;
+        var fator = 1;
+        for (var i = 0; i < pagamentosCent.length; i++) {
+          fator /= (1 + taxa);
+          acumulado += pagamentosCent[i] * fator;
+        }
+        return acumulado;
+      }
+      if (valorPresente(0) <= liquidoCent) { return 0; }
+      var lo = 0, hi = 1;
+      for (var it = 0; it < 200; it++) {
+        var meio = (lo + hi) / 2;
+        if (valorPresente(meio) > liquidoCent) { lo = meio; } else { hi = meio; }
+      }
+      return (lo + hi) / 2;
+    }
+  };
+
+  // =========================================================================
+  // Módulo: Funções de Datas (UTC — imune a fuso/DST)
+  // =========================================================================
+
+  var Datas = {
+    /** "YYYY-MM-DD" -> Date UTC. Aceita Date e normaliza para meia-noite UTC. */
+    deISO: function (valor) {
+      if (valor instanceof Date) {
+        return new Date(Date.UTC(valor.getUTCFullYear(), valor.getUTCMonth(), valor.getUTCDate()));
+      }
+      var p = String(valor).split("-");
+      var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+      // Round-trip: rejeita datas inexistentes ("2026-02-30"), que o Date.UTC
+      // normalizaria silenciosamente — paridade com datetime.date do Python.
+      if (isNaN(d.getTime()) ||
+          d.getUTCFullYear() !== +p[0] ||
+          d.getUTCMonth() !== +p[1] - 1 ||
+          d.getUTCDate() !== +p[2]) {
+        throw new Error("Data da contratação inválida.");
+      }
+      return d;
+    },
+
+    paraISO: function (d) {
+      return d.toISOString().slice(0, 10);
+    },
+
+    somarDias: function (d, dias) {
+      return new Date(d.getTime() + dias * 86400000);
+    },
+
+    /** Soma meses preservando o dia; sem o dia no mês destino, usa o último
+     *  dia do mês (semântica do EDATE do Excel). */
+    adicionarMeses: function (d, meses) {
+      var ano = d.getUTCFullYear();
+      var mesIndex = d.getUTCMonth() + meses;
+      var ultimoDia = new Date(Date.UTC(ano, mesIndex + 1, 0)).getUTCDate();
+      return new Date(Date.UTC(ano, mesIndex, Math.min(d.getUTCDate(), ultimoDia)));
+    },
+
+    ehFimDeSemana: function (d) {
+      var dow = d.getUTCDay(); // 0 = domingo, 6 = sábado
+      return dow === 0 || dow === 6;
+    },
+
+    /** Domingo de Páscoa (algoritmo de Meeus/Jones/Butcher). */
+    pascoa: function (ano) {
+      var a = ano % 19;
+      var b = Math.floor(ano / 100);
+      var c = ano % 100;
+      var d = Math.floor(b / 4);
+      var e = b % 4;
+      var f = Math.floor((b + 8) / 25);
+      var g = Math.floor((b - f + 1) / 3);
+      var h = (19 * a + b - d - g + 15) % 30;
+      var i = Math.floor(c / 4);
+      var k = c % 4;
+      var l = (32 + 2 * e + 2 * i - h - k) % 7;
+      var m = Math.floor((a + 11 * h + 22 * l) / 451);
+      var mes = Math.floor((h + l - 7 * m + 114) / 31);
+      var dia = (h + l - 7 * m + 114) % 31 + 1;
+      return new Date(Date.UTC(ano, mes - 1, dia));
+    }
+  };
+
+  // =========================================================================
+  // Módulo: Funções de Dias Úteis
+  // =========================================================================
+
+  /** Feriados nacionais fixos: [mês, dia]. */
+  var FERIADOS_NACIONAIS_FIXOS = [
+    [1, 1],    // Confraternização Universal
+    [4, 21],   // Tiradentes
+    [5, 1],    // Dia do Trabalho
+    [9, 7],    // Independência
+    [10, 12],  // Nossa Senhora Aparecida
+    [11, 2],   // Finados
+    [11, 15],  // Proclamação da República
+    [11, 20],  // Consciência Negra (Lei 14.759/2023)
+    [12, 25]   // Natal
+  ];
+  var ANOS_FERIADOS_A_FRENTE = 50; // horizonte de geração do calendário nacional
+
+  var DiasUteis = {
+    /** Constrói o calendário de feriados (Set de ISO) a partir de array. */
+    criarCalendario: function (feriados) {
+      var set = {};
+      (feriados || []).forEach(function (f) {
+        set[Datas.paraISO(Datas.deISO(f))] = true;
+      });
+      return set;
+    },
+
+    /** Acrescenta ao calendário os feriados nacionais (fixos + segunda/terça
+     *  de Carnaval, Sexta-feira Santa e Corpus Christi) de anoInicio..anoFim. */
+    adicionarFeriadosNacionais: function (calendario, anoInicio, anoFim) {
+      for (var ano = anoInicio; ano <= anoFim; ano++) {
+        FERIADOS_NACIONAIS_FIXOS.forEach(function (md) {
+          calendario[Datas.paraISO(new Date(Date.UTC(ano, md[0] - 1, md[1])))] = true;
+        });
+        var p = Datas.pascoa(ano);
+        [-48, -47, -2, 60].forEach(function (delta) {
+          calendario[Datas.paraISO(Datas.somarDias(p, delta))] = true;
+        });
+      }
+      return calendario;
+    },
+
+    ehDiaUtil: function (d, calendario) {
+      return !Datas.ehFimDeSemana(d) && !calendario[Datas.paraISO(d)];
+    },
+
+    /** Primeiro dia útil ESTRITAMENTE posterior a `d`. */
+    proximoDiaUtil: function (d, calendario) {
+      var atual = Datas.somarDias(d, 1);
+      while (!DiasUteis.ehDiaUtil(atual, calendario)) {
+        atual = Datas.somarDias(atual, 1);
+      }
+      return atual;
+    },
+
+    /** Dias úteis no intervalo (inicio, fim] — exclui o início, inclui o fim. */
+    contarDiasUteis: function (inicio, fim, calendario) {
+      var contagem = 0;
+      var atual = Datas.somarDias(inicio, 1);
+      while (atual <= fim) {
+        if (DiasUteis.ehDiaUtil(atual, calendario)) { contagem++; }
+        atual = Datas.somarDias(atual, 1);
+      }
+      return contagem;
+    }
+  };
+
+  // =========================================================================
+  // Módulo: Validações
+  // =========================================================================
+
+  var Validacoes = {
+    /** Número finito de verdade (rejeita null/string/NaN — paridade com Python). */
+    ehNumero: function (v) {
+      return typeof v === "number" && isFinite(v);
+    },
+
+    validarEntradas: function (e) {
+      if (!Validacoes.ehNumero(e.valorCredito) || e.valorCredito <= 0) {
+        throw new Error("Valor do crédito deve ser maior que zero.");
+      }
+      if (!Validacoes.ehNumero(e.taxaMensal) || e.taxaMensal < 0) {
+        throw new Error("Taxa de juros mensal não pode ser negativa.");
+      }
+      if (!Validacoes.ehNumero(e.taxaServico) || e.taxaServico < 0) {
+        throw new Error("Taxa de serviço não pode ser negativa.");
+      }
+      if (e.taxaServico >= e.valorCredito) {
+        throw new Error("Taxa de serviço deve ser menor que o valor do crédito.");
+      }
+      if (PRAZOS_VALIDOS.indexOf(e.prazoMeses) === -1) {
+        throw new Error("Prazo inválido. Opções: 3, 6, 9 ou 12 meses.");
+      }
+      if (!Validacoes.ehNumero(e.parcelaDiaria) || e.parcelaDiaria <= 0) {
+        throw new Error("Parcela diária deve ser maior que zero.");
+      }
+    }
+  };
+
+  // =========================================================================
+  // Módulo: Motor de Amortização (laço diário — NÃO usa Tabela Price)
+  // =========================================================================
+
+  var MotorAmortizacao = {
+    /**
+     * A cada dia útil: capitaliza juros sobre o saldo, debita a parcela fixa
+     * e avança para o próximo dia útil, até o saldo zerar. A última parcela é
+     * limitada ao saldo remanescente (ajuste automático).
+     * Pré-condição: parcelaCent > juros do primeiro dia.
+     */
+    simular: function (valorCreditoCent, taxaDiaria, parcelaCent, dataContratacao,
+                       calendario, politicaJuros) {
+      var saldo = valorCreditoCent;
+      var evolucao = [];
+      var qtd = 0;
+      var totalPago = 0;
+      var pagamento = 0;
+      var dia = dataContratacao;
+
+      while (saldo > 0) {
+        if (qtd >= MAX_ITERACOES) {
+          throw new Error("Limite de iterações excedido: a parcela não amortiza a dívida.");
+        }
+        dia = DiasUteis.proximoDiaUtil(dia, calendario);
+        var juros = politicaJuros(saldo, taxaDiaria);
+        saldo += juros;
+        pagamento = Math.min(parcelaCent, saldo); // ajuste automático da última parcela
+        saldo -= pagamento;
+        qtd++;
+        totalPago += pagamento;
+        evolucao.push({
+          data: Datas.paraISO(dia),
+          numero: qtd,
+          jurosCent: juros,
+          pagamentoCent: pagamento,
+          saldoCent: saldo
+        });
+      }
+
+      return {
+        qtdParcelas: qtd,
+        ultimaParcelaCent: pagamento,
+        totalPagoCent: totalPago,
+        dataUltimaParcela: Datas.paraISO(dia),
+        evolucao: evolucao
+      };
+    },
+
+    /** True se a parcela liquida a operação em até `limite` parcelas (versão
+     *  leve, sem datas — cada parcela ocupa exatamente um dia útil). */
+    cabeNoLimite: function (valorCreditoCent, taxaDiaria, parcelaCent, limite, politicaJuros) {
+      if (parcelaCent <= politicaJuros(valorCreditoCent, taxaDiaria)) { return false; }
+      var saldo = valorCreditoCent;
+      var n = 0;
+      while (saldo > 0) {
+        n++;
+        if (n > limite) { return false; }
+        saldo += politicaJuros(saldo, taxaDiaria);
+        saldo -= Math.min(parcelaCent, saldo);
+      }
+      return true;
+    },
+
+    /** Menor parcela (centavos) que liquida em até `maxParcelas` dias úteis.
+     *  Busca binária — qtd de parcelas é monotônica na parcela. */
+    parcelaMinimaCent: function (valorCreditoCent, taxaDiaria, maxParcelas, politicaJuros) {
+      if (maxParcelas <= 0) {
+        throw new Error("Não há dias úteis disponíveis dentro do prazo contratado.");
+      }
+      var juros1 = politicaJuros(valorCreditoCent, taxaDiaria);
+      var lo = juros1 + 1;
+      var hi = valorCreditoCent + juros1;
+      while (lo < hi) {
+        var meio = Math.floor((lo + hi) / 2);
+        if (MotorAmortizacao.cabeNoLimite(valorCreditoCent, taxaDiaria, meio, maxParcelas, politicaJuros)) {
+          hi = meio;
+        } else {
+          lo = meio + 1;
+        }
+      }
+      return lo;
+    }
+  };
+
+  // =========================================================================
+  // Módulo: Motor Financeiro (orquestração)
+  // =========================================================================
+
+  /**
+   * Ponto de entrada do motor.
+   *
+   * @param {Object} entradas
+   * @param {number} entradas.valorCredito   Valor do crédito, em reais.
+   * @param {number} entradas.taxaMensal     Taxa mensal decimal (0.04 = 4% a.m.).
+   * @param {number} entradas.taxaServico    Taxa de serviço, em reais (fora do financiamento).
+   * @param {number} entradas.prazoMeses     3 | 6 | 9 | 12.
+   * @param {string|Date} entradas.dataContratacao  "YYYY-MM-DD" ou Date.
+   * @param {number} entradas.parcelaDiaria  Parcela diária fixa, em reais.
+   * @param {string[]} [entradas.feriados]   Feriados EXTRAS "YYYY-MM-DD"
+   *        (estaduais/municipais); os nacionais são automáticos.
+   * @param {boolean} [entradas.incluirFeriadosNacionais=true]  Calendário
+   *        nacional automático (fixos + móveis via Páscoa).
+   * @param {string} [entradas.politicaAjuste="estender_prazo"]  Política quando
+   *        a parcela não liquida no prazo: "estender_prazo" | "parcela_minima".
+   * @param {function} [entradas.politicaJuros]  Override da política de juros.
+   * @returns {Object} resultado completo (valores monetários em centavos).
+   */
+  function simularOperacao(entradas) {
+    Validacoes.validarEntradas(entradas);
+    // Só a OMISSÃO do parâmetro assume o padrão; null/"" são inválidos
+    // (paridade com Python/VBA, que rejeitam qualquer valor fora da lista).
+    var politicaAjuste = entradas.politicaAjuste === undefined
+      ? "estender_prazo" : entradas.politicaAjuste;
+    if (POLITICAS_AJUSTE.indexOf(politicaAjuste) === -1) {
+      throw new Error("Política de ajuste inválida. Opções: " + POLITICAS_AJUSTE.join(", ") + ".");
+    }
+
+    var politicaJuros = entradas.politicaJuros || Matematica.calcularJurosDia;
+    var calendario = DiasUteis.criarCalendario(entradas.feriados);
+    var dataContratacao = Datas.deISO(entradas.dataContratacao);
+    if (entradas.incluirFeriadosNacionais !== false) {
+      DiasUteis.adicionarFeriadosNacionais(calendario,
+        dataContratacao.getUTCFullYear(),
+        dataContratacao.getUTCFullYear() + ANOS_FERIADOS_A_FRENTE);
+    }
+
+    var vc = Matematica.paraCentavos(entradas.valorCredito);
+    var ts = Matematica.paraCentavos(entradas.taxaServico);
+    var pd = Matematica.paraCentavos(entradas.parcelaDiaria);
+
+    var taxaDiaria = Matematica.taxaMensalParaDiaria(entradas.taxaMensal);
+    var dataFinal = Datas.adicionarMeses(dataContratacao, entradas.prazoMeses);
+    var diasUteisDisponiveis = DiasUteis.contarDiasUteis(dataContratacao, dataFinal, calendario);
+    var jurosDia1 = politicaJuros(vc, taxaDiaria);
+
+    // Só é possível simular se a parcela cobre (com folga) os juros do 1º dia.
+    var simulacao = null;
+    if (pd > jurosDia1) {
+      simulacao = MotorAmortizacao.simular(vc, taxaDiaria, pd, dataContratacao,
+                                           calendario, politicaJuros);
+    }
+
+    var prazoAtendido = simulacao !== null && simulacao.qtdParcelas <= diasUteisDisponiveis;
+
+    var ajuste = null;
+    if (!prazoAtendido) {
+      if (politicaAjuste === "parcela_minima") {
+        // Política alternativa: mantém o prazo e recalcula a parcela mínima.
+        var pMin = MotorAmortizacao.parcelaMinimaCent(vc, taxaDiaria, diasUteisDisponiveis, politicaJuros);
+        ajuste = {
+          tipo: "parcela_minima",
+          mensagem: MSG_PARCELA_INSUFICIENTE,
+          parcelaMinimaCent: pMin,
+          novaSimulacao: MotorAmortizacao.simular(vc, taxaDiaria, pMin, dataContratacao,
+                                                  calendario, politicaJuros)
+        };
+      } else if (simulacao !== null) {
+        // Regra comercial padrão: parcela SEMPRE fixa — o cronograma é
+        // estendido automaticamente (+1, +2, +3... parcelas além do prazo).
+        ajuste = {
+          tipo: "extensao",
+          mensagem: MSG_PRAZO_ESTENDIDO,
+          parcelasAdicionais: simulacao.qtdParcelas - diasUteisDisponiveis
+        };
+      } else {
+        // A parcela não cobre nem os juros do 1º dia: estender não resolve.
+        ajuste = {
+          tipo: "inviavel",
+          mensagem: MSG_OPERACAO_INVIAVEL,
+          jurosPrimeiroDiaCent: jurosDia1,
+          parcelaMinimaReferenciaCent: MotorAmortizacao.parcelaMinimaCent(
+            vc, taxaDiaria, diasUteisDisponiveis, politicaJuros)
+        };
+      }
+    }
+
+    // CET sobre o fluxo efetivamente apresentado
+    var simEfetiva = (ajuste && ajuste.tipo === "parcela_minima")
+      ? ajuste.novaSimulacao
+      : simulacao;                       // atendido ou estendido (null se inviável)
+    var cet = null;
+    if (simEfetiva !== null) {
+      var cetDiario = Matematica.calcularCETDiario(
+        simEfetiva.evolucao.map(function (d) { return d.pagamentoCent; }), vc - ts);
+      cet = {
+        diario: cetDiario,
+        mensal: Math.pow(1 + cetDiario, 21) - 1,   // 252/12 = 21 d.u./mês
+        anual: Math.pow(1 + cetDiario, 252) - 1
+      };
+    }
+
+    return {
+      entradas: {
+        valorCreditoCent: vc,
+        taxaMensal: entradas.taxaMensal,
+        taxaServicoCent: ts,
+        prazoMeses: entradas.prazoMeses,
+        dataContratacao: Datas.paraISO(dataContratacao),
+        parcelaDiariaCent: pd
+      },
+      valorLiquidoCent: vc - ts,
+      taxaDiaria: taxaDiaria,
+      dataFinal: Datas.paraISO(dataFinal),
+      diasUteisDisponiveis: diasUteisDisponiveis,
+      simulacao: simulacao,
+      prazoAtendido: prazoAtendido,
+      ajuste: ajuste,
+      cet: cet
+    };
+  }
+
+  // =========================================================================
+  // API pública
+  // =========================================================================
+
+  return {
+    simularOperacao: simularOperacao,
+    Matematica: Matematica,
+    Datas: Datas,
+    DiasUteis: DiasUteis,
+    Validacoes: Validacoes,
+    MotorAmortizacao: MotorAmortizacao,
+    PRAZOS_VALIDOS: PRAZOS_VALIDOS,
+    POLITICAS_AJUSTE: POLITICAS_AJUSTE,
+    MSG_PARCELA_INSUFICIENTE: MSG_PARCELA_INSUFICIENTE,
+    MSG_PRAZO_ESTENDIDO: MSG_PRAZO_ESTENDIDO,
+    MSG_OPERACAO_INVIAVEL: MSG_OPERACAO_INVIAVEL
+  };
+})();
+
+/* Compatibilidade Node.js (testes/reuso servidor) sem afetar o navegador. */
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = Monetz;
+}
+
+</script>
+<script>
+/* ==========================================================================
+   Módulo UI — camada de interface. Nenhuma regra de negócio aqui:
+   todo o cálculo vem do motor (Monetz.simularOperacao).
+   ========================================================================== */
+(function () {
+  "use strict";
+
+  var fmtMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+  var fmtMoeda0 = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL",
+    minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  var fmtData = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" });
+
+  function moeda(cent) { return fmtMoeda.format(cent / 100); }
+  function moedaInteira(cent) { return fmtMoeda0.format(cent / 100); }
+  function dataBR(iso) { return fmtData.format(new Date(iso + "T00:00:00Z")); }
+  function pct(x) {
+    return (x * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+  }
+
+  /** Converte texto pt-BR ("20.000,00") ou técnico ("20000.5") em número. */
+  function parseNumeroBR(texto) {
+    var s = String(texto).replace(/[R$\s%]/g, "");
+    if (s === "") { return NaN; }
+    if (s.indexOf(",") >= 0) { s = s.replace(/\./g, "").replace(",", "."); }
+    return Number(s);
+  }
+
+  /** Formata o campo de taxa preservando até 4 casas decimais — o mesmo
+   *  limite usado ao reabrir um link compartilhado (simulação reproduzível). */
+  function formatarCampoMoeda(input) {
+    var n = parseNumeroBR(input.value);
+    if (isFinite(n)) {
+      input.value = n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    }
+  }
+
+  function el(id) { return document.getElementById(id); }
+
+  function linha(rotulo, valor) {
+    return '<div class="linha"><span class="l">' + rotulo + '</span><span class="v">' + valor + "</span></div>";
+  }
+
+  /** Gráfico SVG (sem bibliotecas) da evolução do saldo devedor. */
+  function graficoSaldo(evolucao, valorInicialCent) {
+    var W = 720, H = 230, padL = 76, padR = 14, padT = 12, padB = 30;
+    var n = evolucao.length;
+    var maxY = valorInicialCent;
+    function X(i) { return padL + (W - padL - padR) * i / n; }
+    function Y(v) { return padT + (H - padT - padB) * (1 - v / maxY); }
+
+    var linha = "M" + X(0).toFixed(1) + " " + Y(valorInicialCent).toFixed(1);
+    evolucao.forEach(function (d, i) {
+      linha += "L" + X(i + 1).toFixed(1) + " " + Y(d.saldoCent).toFixed(1);
+    });
+    var area = linha + "L" + X(n).toFixed(1) + " " + Y(0).toFixed(1) +
+               "L" + X(0).toFixed(1) + " " + Y(0).toFixed(1) + "Z";
+
+    var grade = "";
+    [0, 0.5, 1].forEach(function (fr) {
+      var y = Y(maxY * fr);
+      grade += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) +
+        '" y2="' + y.toFixed(1) + '" stroke="#E4E9F2" stroke-width="1"/>' +
+        '<text x="' + (padL - 8) + '" y="' + (y + 3.5).toFixed(1) +
+        '" text-anchor="end" font-size="10" fill="#5A6B8C">' + moedaInteira(maxY * fr) + "</text>";
+    });
+    var eixoX = '<text x="' + padL + '" y="' + (H - 8) + '" font-size="10" fill="#5A6B8C">' +
+      dataBR(evolucao[0].data) + "</text>" +
+      '<text x="' + (W - padR) + '" y="' + (H - 8) + '" text-anchor="end" font-size="10" fill="#5A6B8C">' +
+      dataBR(evolucao[n - 1].data) + "</text>";
+
+    return '<svg viewBox="0 0 ' + W + " " + H + '" xmlns="http://www.w3.org/2000/svg" role="img"' +
+      ' aria-label="Gráfico da evolução do saldo devedor">' + grade +
+      '<path d="' + area + '" fill="rgba(18,38,77,0.10)"/>' +
+      '<path d="' + linha + '" fill="none" stroke="#C9A227" stroke-width="2.5" stroke-linejoin="round"/>' +
+      eixoX + "</svg>";
+  }
+
+  function tabelaEvolucao(evolucao) {
+    var linhas = evolucao.map(function (d) {
+      return "<tr><td>" + dataBR(d.data) + "</td><td>" + d.numero + "</td><td>" +
+        moeda(d.jurosCent) + "</td><td>" + moeda(d.pagamentoCent) + "</td><td>" +
+        moeda(d.saldoCent) + "</td></tr>";
+    }).join("");
+    return '<details class="evolucao"><summary>Ver evolução do saldo devedor (' + evolucao.length + " dias úteis)</summary>" +
+      '<div class="tabela-scroll"><table class="evo"><thead><tr>' +
+      "<th>Data</th><th>Nº</th><th>Juros</th><th>Parcela</th><th>Saldo devedor</th>" +
+      "</tr></thead><tbody>" + linhas + "</tbody></table></div></details>";
+  }
+
+  function render(r) {
+    var e = r.entradas;
+    var d = dadosExibidos();
+
+    // Operação inviável: a parcela fixa não cobre nem os juros do 1º dia.
+    if (d.tipo === "inviavel") {
+      el("resultado").innerHTML =
+        '<div class="aviso erro"><b>' + r.ajuste.mensagem + "</b>" +
+        "Parcela informada: " + moeda(e.parcelaDiariaCent) +
+        " · Juros do 1º dia: " + moeda(r.ajuste.jurosPrimeiroDiaCent) + ".<br>" +
+        "Referência comercial: para liquidar dentro do prazo contratado, a parcela " +
+        "diária precisaria ser de pelo menos <b style=\"display:inline\">" +
+        moeda(r.ajuste.parcelaMinimaReferenciaCent) + "</b>.</div>";
+      el("acoes").hidden = true;
+      return;
+    }
+
+    var sim = d.sim;
+    var parcelaExibida = d.parcelaCent;
+    var html = "";
+
+    html += '<div class="kpis">' +
+      '<div class="kpi gold"><div class="k-label">Valor líquido liberado</div><div class="k-value">' + moeda(r.valorLiquidoCent) + "</div></div>" +
+      '<div class="kpi"><div class="k-label">Valor total pago</div><div class="k-value">' + moeda(sim.totalPagoCent) + "</div></div>" +
+      '<div class="kpi"><div class="k-label">Custo Efetivo Total</div><div class="k-value">' + pct(r.cet.mensal) + ' a.m.</div>' +
+      '<div class="k-sub">' + pct(r.cet.anual) + " a.a.</div></div>" +
+      "</div>";
+
+    if (d.tipo === "extensao") {
+      html += '<div class="aviso"><b>' + r.ajuste.mensagem + "</b>" +
+        "Prazo contratado: " + r.diasUteisDisponiveis + " dias úteis (até " + dataBR(r.dataFinal) + "). " +
+        "Com a parcela fixa de " + moeda(e.parcelaDiariaCent) + " são necessárias " +
+        sim.qtdParcelas + " parcelas — <b style=\"display:inline\">+" + r.ajuste.parcelasAdicionais +
+        " parcela" + (r.ajuste.parcelasAdicionais > 1 ? "s" : "") + " além do prazo</b>, " +
+        "com término previsto em " + dataBR(sim.dataUltimaParcela) + ".</div>";
+    } else if (d.tipo === "parcela_minima") {
+      html += '<div class="aviso"><b>' + r.ajuste.mensagem + "</b>" +
+        "Parcela informada: " + moeda(e.parcelaDiariaCent) +
+        ". Parcela mínima necessária: <b style=\"display:inline\">" + moeda(r.ajuste.parcelaMinimaCent) + "</b>. " +
+        "Resultado abaixo recalculado com a parcela mínima.</div>";
+    }
+
+    html += '<div class="linhas">' +
+      linha("Valor do Crédito", moeda(e.valorCreditoCent)) +
+      linha("Valor Líquido Liberado", moeda(r.valorLiquidoCent)) +
+      linha("Taxa Mensal", (e.taxaMensal * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + "% a.m.") +
+      linha("CET — Custo Efetivo Total", pct(r.cet.mensal) + " a.m. · " + pct(r.cet.anual) + " a.a.") +
+      linha("Taxa de Serviço", moeda(e.taxaServicoCent)) +
+      linha("Prazo", e.prazoMeses + " meses (até " + dataBR(r.dataFinal) + " · " + r.diasUteisDisponiveis + " dias úteis)") +
+      linha("Data da Contratação", dataBR(e.dataContratacao)) +
+      linha("Quantidade de Parcelas", sim.qtdParcelas +
+        (d.tipo === "extensao"
+          ? " (" + r.diasUteisDisponiveis + " no prazo + " + r.ajuste.parcelasAdicionais + ")"
+          : "")) +
+      linha("Valor da Parcela Diária", moeda(parcelaExibida) +
+        (d.tipo === "parcela_minima" ? '<span class="badge min">MÍNIMA</span>' : "")) +
+      linha("Valor da Última Parcela", moeda(sim.ultimaParcelaCent)) +
+      linha("Valor Total Pago", moeda(sim.totalPagoCent)) +
+      linha("Data Prevista da Última Parcela", dataBR(sim.dataUltimaParcela) +
+        (r.prazoAtendido
+          ? '<span class="badge ok">DENTRO DO PRAZO</span>'
+          : (d.tipo === "extensao"
+              ? '<span class="badge min">PRAZO ESTENDIDO +' + r.ajuste.parcelasAdicionais + "</span>"
+              : ""))) +
+      "</div>";
+
+    html += '<div class="grafico"><div class="g-titulo">Evolução do saldo devedor</div>' +
+      graficoSaldo(sim.evolucao, e.valorCreditoCent) + "</div>";
+    html += tabelaEvolucao(sim.evolucao);
+    el("resultado").innerHTML = html;
+    el("acoes").hidden = false;
+  }
+
+  /* ------------------------------------------------------------------
+     Compartilhamento: PDF (impressão), E-mail (mailto) e WhatsApp (wa.me)
+     ------------------------------------------------------------------ */
+  var ultimoResultado = null;
+
+  /** Dados exibidos da última simulação, já resolvendo a política de ajuste.
+   *  tipo: null (dentro do prazo) | "extensao" | "inviavel" | "parcela_minima". */
+  function dadosExibidos() {
+    var r = ultimoResultado;
+    var tipo = r.prazoAtendido ? null : r.ajuste.tipo;
+    var minima = tipo === "parcela_minima";
+    return {
+      r: r,
+      e: r.entradas,
+      tipo: tipo,
+      sim: minima ? r.ajuste.novaSimulacao : r.simulacao,   // null quando inviável
+      parcelaCent: minima ? r.ajuste.parcelaMinimaCent : r.entradas.parcelaDiariaCent
+    };
+  }
+
+  /** Resumo em texto puro. `negrito` = marcação *asterisco* do WhatsApp. */
+  function gerarResumoTexto(negrito) {
+    var d = dadosExibidos();
+    var b = negrito ? "*" : "";
+    var linhas = [
+      b + "Monetz — Simulação de Antecipação de Recebíveis" + b,
+      "",
+      "Valor do Crédito: " + moeda(d.e.valorCreditoCent),
+      "Valor Líquido Liberado: " + moeda(d.r.valorLiquidoCent),
+      "Taxa Mensal: " + (d.e.taxaMensal * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + "% a.m.",
+      "Taxa de Serviço: " + moeda(d.e.taxaServicoCent),
+      "Prazo: " + d.e.prazoMeses + " meses (até " + dataBR(d.r.dataFinal) + ")",
+      "Data da Contratação: " + dataBR(d.e.dataContratacao),
+      "Parcela Diária: " + moeda(d.parcelaCent) +
+        (d.tipo === "parcela_minima" ? " (mínima necessária)" : " (fixa)"),
+      "Quantidade de Parcelas: " + d.sim.qtdParcelas,
+      "Valor da Última Parcela: " + moeda(d.sim.ultimaParcelaCent),
+      b + "Valor Total Pago: " + moeda(d.sim.totalPagoCent) + b,
+      "CET — Custo Efetivo Total: " + pct(d.r.cet.mensal) + " a.m. · " + pct(d.r.cet.anual) + " a.a.",
+      "Última Parcela prevista para: " + dataBR(d.sim.dataUltimaParcela)
+    ];
+    if (d.tipo === "extensao") {
+      linhas.push("", "Atenção: parcela fixa mantida em " + moeda(d.e.parcelaDiariaCent) +
+        " — cronograma estendido em +" + d.r.ajuste.parcelasAdicionais +
+        " parcela(s) além do prazo contratado (término previsto: " +
+        dataBR(d.sim.dataUltimaParcela) + ").");
+    } else if (d.tipo === "parcela_minima") {
+      linhas.push("", "Atenção: " + d.r.ajuste.mensagem +
+        " Parcela informada: " + moeda(d.e.parcelaDiariaCent) +
+        "; resultado recalculado com a parcela mínima.");
+    }
+    linhas.push("", "Simulação de caráter informativo, sem valor contratual.");
+    return linhas.join("\n");
+  }
+
+  function abrirWhatsApp() {
+    window.open("https://wa.me/?text=" + encodeURIComponent(gerarResumoTexto(true)), "_blank");
+  }
+
+  function enviarEmail() {
+    var assunto = "Monetz — Simulação de Antecipação de Recebíveis";
+    window.location.href = "mailto:?subject=" + encodeURIComponent(assunto) +
+      "&body=" + encodeURIComponent(gerarResumoTexto(false));
+  }
+
+  /** Monta o relatório de impressão em #printArea. Retorna false quando não
+   *  há simulação válida para imprimir (ex.: operação inviável). */
+  function montarRelatorio() {
+    if (!ultimoResultado) { return false; }
+    var d = dadosExibidos();
+    if (!d.sim) { return false; }
+    var agora = new Date();
+    var carimbo = agora.toLocaleDateString("pt-BR") + " " +
+      agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+    function linhaDados(rotulo, valor) {
+      return "<tr><td>" + rotulo + "</td><td>" + valor + "</td></tr>";
+    }
+
+    var html =
+      '<div class="p-cab"><div class="p-marca">MONETZ</div>' +
+      '<div class="p-titulo">Simulação de Antecipação de Recebíveis<br>Gerada em ' + carimbo + "</div></div>" +
+
+      '<div class="p-secao">Dados da Operação</div><table class="p-dados">' +
+      linhaDados("Valor do Crédito", moeda(d.e.valorCreditoCent)) +
+      linhaDados("Taxa de Juros", (d.e.taxaMensal * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 }) + "% a.m.") +
+      linhaDados("Taxa de Serviço", moeda(d.e.taxaServicoCent)) +
+      linhaDados("Prazo", d.e.prazoMeses + " meses (até " + dataBR(d.r.dataFinal) + " · " + d.r.diasUteisDisponiveis + " dias úteis)") +
+      linhaDados("Data da Contratação", dataBR(d.e.dataContratacao)) +
+      "</table>" +
+
+      '<div class="p-secao">Resultado da Simulação</div><table class="p-dados">' +
+      linhaDados("Valor Líquido Liberado", moeda(d.r.valorLiquidoCent)) +
+      linhaDados("Parcela Diária" + (d.tipo === "parcela_minima" ? " (mínima necessária)" : " (fixa)"),
+        moeda(d.parcelaCent)) +
+      linhaDados("Quantidade de Parcelas", d.sim.qtdParcelas +
+        (d.tipo === "extensao"
+          ? " (" + d.r.diasUteisDisponiveis + " no prazo + " + d.r.ajuste.parcelasAdicionais + ")"
+          : "")) +
+      linhaDados("Valor da Última Parcela", moeda(d.sim.ultimaParcelaCent)) +
+      linhaDados("Valor Total Pago", moeda(d.sim.totalPagoCent)) +
+      linhaDados("CET — Custo Efetivo Total", pct(d.r.cet.mensal) + " a.m. · " + pct(d.r.cet.anual) + " a.a.") +
+      linhaDados("Data Prevista da Última Parcela", dataBR(d.sim.dataUltimaParcela)) +
+      "</table>" +
+
+      (d.tipo === "extensao"
+        ? '<div class="p-aviso"><b>' + d.r.ajuste.mensagem + "</b> Prazo contratado: " +
+          d.r.diasUteisDisponiveis + " dias úteis (até " + dataBR(d.r.dataFinal) + "); necessárias " +
+          d.sim.qtdParcelas + " parcelas (+" + d.r.ajuste.parcelasAdicionais +
+          " além do prazo), término previsto em " + dataBR(d.sim.dataUltimaParcela) + ".</div>"
+        : "") +
+      (d.tipo === "parcela_minima"
+        ? '<div class="p-aviso"><b>' + d.r.ajuste.mensagem + "</b> Parcela informada: " +
+          moeda(d.e.parcelaDiariaCent) + ". Resultado recalculado com a parcela mínima." + "</div>"
+        : "") +
+
+      '<div class="p-secao">Evolução do Saldo Devedor</div>' +
+      graficoSaldo(d.sim.evolucao, d.e.valorCreditoCent) +
+      '<table class="p-evo"><thead><tr><th>Data</th><th>Nº</th><th>Juros</th><th>Parcela</th><th>Saldo devedor</th></tr></thead><tbody>' +
+      d.sim.evolucao.map(function (dia) {
+        return "<tr><td>" + dataBR(dia.data) + "</td><td>" + dia.numero + "</td><td>" +
+          moeda(dia.jurosCent) + "</td><td>" + moeda(dia.pagamentoCent) + "</td><td>" +
+          moeda(dia.saldoCent) + "</td></tr>";
+      }).join("") +
+      "</tbody></table>" +
+
+      '<div class="p-rodape">Monetz · Simulação de caráter informativo, sem valor contratual.</div>';
+
+    el("printArea").innerHTML = html;
+    return true;
+  }
+
+  function gerarPDF() {
+    if (montarRelatorio()) { window.print(); }
+  }
+
+  /* ------------------------------------------------------------------
+     Link compartilhável: os parâmetros da simulação vão na URL, e uma
+     URL com parâmetros abre a página já preenchida e simulada.
+     ------------------------------------------------------------------ */
+  function atualizarURL() {
+    var e = ultimoResultado.entradas;
+    var q = "v=" + (e.valorCreditoCent / 100) +
+            "&t=" + (e.taxaMensal * 100) +
+            "&s=" + (e.taxaServicoCent / 100) +
+            "&p=" + e.prazoMeses +
+            "&d=" + e.dataContratacao +
+            "&pd=" + (e.parcelaDiariaCent / 100);
+    try {
+      history.replaceState(null, "", window.location.pathname + "?" + q);
+    } catch (ig) { /* file:// em alguns navegadores não permite replaceState */ }
+  }
+
+  function carregarDaURL() {
+    var busca = window.location.search;
+    if (!busca || busca.indexOf("v=") < 0) { return false; }
+    var q = new URLSearchParams(busca);
+    function preencher(chave, id, minimo, casasMax) {
+      var bruto = q.get(chave);
+      if (bruto === null || bruto === "") { return; }   // ausente/vazio não zera o campo
+      var x = Number(bruto);
+      if (isFinite(x) && x >= minimo) {
+        el(id).value = x.toLocaleString("pt-BR",
+          { minimumFractionDigits: 2, maximumFractionDigits: casasMax || 2 });
+      }
+    }
+    preencher("v", "inpValor", 0.01);
+    preencher("t", "inpTaxa", 0, 4);   // taxa preserva até 4 casas (link fiel)
+    preencher("s", "inpServico", 0);
+    preencher("pd", "inpParcela", 0.01);
+    var p = q.get("p");
+    if (["3", "6", "9", "12"].indexOf(p) >= 0) { el("inpPrazo").value = p; }
+    var d = q.get("d");
+    if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) { el("inpData").value = d; }
+    return true;
+  }
+
+  function copiarLink() {
+    var url = window.location.href;
+    var botao = el("btnCopiar");
+    function feito() {
+      var original = botao.innerHTML;
+      botao.innerHTML = "Link copiado!";
+      setTimeout(function () { botao.innerHTML = original; }, 1800);
+    }
+    function alternativo() {
+      var ta = document.createElement("textarea");
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch (ig) {}
+      document.body.removeChild(ta);
+      feito();
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(feito).catch(alternativo);
+    } else {
+      alternativo();
+    }
+  }
+
+  /** Folha de compartilhamento nativa (celular) — botão só aparece se suportado. */
+  function compartilharNativo() {
+    navigator.share({
+      title: "Monetz — Simulação de Antecipação de Recebíveis",
+      text: gerarResumoTexto(false),
+      url: window.location.href
+    }).catch(function () { /* usuário cancelou */ });
+  }
+
+  /** Máscara de moeda em tempo real (estilo caixa eletrônico): os dígitos
+   *  digitados são tratados como centavos e formatados a cada tecla. */
+  function mascaraMoedaTempoReal(input) {
+    input.addEventListener("input", function () {
+      var dig = input.value.replace(/\D/g, "").replace(/^0+(?=\d{3})/, "").slice(0, 12);
+      if (dig === "") { input.value = ""; return; }
+      input.value = (parseInt(dig, 10) / 100)
+        .toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    });
+  }
+
+  function simular() {
+    var erro = el("erroForm");
+    erro.style.display = "none";
+    el("printArea").innerHTML = "";   // invalida relatório de simulação anterior
+    try {
+      var r = Monetz.simularOperacao({
+        valorCredito: parseNumeroBR(el("inpValor").value),
+        taxaMensal: parseNumeroBR(el("inpTaxa").value) / 100,
+        taxaServico: parseNumeroBR(el("inpServico").value),
+        prazoMeses: parseInt(el("inpPrazo").value, 10),
+        dataContratacao: el("inpData").value,
+        parcelaDiaria: parseNumeroBR(el("inpParcela").value),
+        feriados: []            // ponto de extensão: calendário de feriados
+      });
+      ultimoResultado = r;
+      render(r);
+      atualizarURL();
+    } catch (ex) {
+      erro.textContent = ex.message;
+      erro.style.display = "block";
+    }
+  }
+
+  // Inicialização — data LOCAL (toISOString usaria UTC: após 21h em UTC-3
+  // o campo abriria com a data de amanhã)
+  var hoje = new Date();
+  el("inpData").value = hoje.getFullYear() + "-" +
+    String(hoje.getMonth() + 1).padStart(2, "0") + "-" +
+    String(hoje.getDate()).padStart(2, "0");
+  el("btnSimular").addEventListener("click", simular);
+  el("btnPdf").addEventListener("click", gerarPDF);
+  el("btnEmail").addEventListener("click", enviarEmail);
+  el("btnWhats").addEventListener("click", abrirWhatsApp);
+  el("btnCopiar").addEventListener("click", copiarLink);
+  el("btnShare").addEventListener("click", compartilharNativo);
+  if (navigator.share) { el("btnShare").hidden = false; }
+  ["inpValor", "inpServico", "inpParcela"].forEach(function (id) {
+    mascaraMoedaTempoReal(el(id));
+  });
+  el("inpTaxa").addEventListener("blur", function () { formatarCampoMoeda(el("inpTaxa")); });
+  // Enter simula apenas a partir dos campos do formulário (Enter em <summary>,
+  // links etc. mantém o comportamento nativo)
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Enter" &&
+        (ev.target.tagName === "INPUT" || ev.target.tagName === "SELECT")) {
+      simular();
+    }
+  });
+  // Ctrl+P / menu Imprimir sempre imprime a simulação ATUAL
+  window.addEventListener("beforeprint", function () {
+    if (!montarRelatorio()) {
+      el("printArea").innerHTML =
+        "<p>Nenhuma simulação para imprimir — preencha os dados e clique em SIMULAR.</p>";
+    }
+  });
+  // URL com parâmetros (link compartilhado) => preenche e simula direto
+  if (carregarDaURL()) { simular(); }
+})();
+</script>
+</body>
+</html>
